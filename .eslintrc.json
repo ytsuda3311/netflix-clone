@@ -1,3 +1,54 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": "next/core-web-vitals",
+  "plugins": ["import"],
+  "rules": {
+    "import/order": [
+      "error",
+      {
+        // グループごとの並び順
+        "groups": [
+          "builtin", // 1. fsやpathなどのnode "builtin"のモジュール
+          "external", // 2. npm installしたパッケージ
+          "internal", // 3. webpackなどでパス設定したモジュール
+          ["parent", "sibling"], // 4. 親階層と子階層のファイル
+          "object", // object
+          "type", // 型のみのファイル
+          "index" // 同階層のファイル
+        ],
+        // グループごとに改行を入れる
+        "newlines-between": "always", // "never"を指定すると改行なし
+        "pathGroupsExcludedImportTypes": ["builtin"],
+        // アルファベット順・大文字小文字を区別しない
+        "alphabetize": { "order": "asc", "caseInsensitive": true },
+        // パターンマッチしたものをグループにする
+        // "newlines-between": "always"の場合はpathGroupsごとに改行が入る
+        "pathGroups": [
+          // react関連をexternalより前にする
+          {
+            "pattern": "react**",
+            "group": "external",
+            "position": "before"
+          },
+          // `@/app`, `@/features/`, `@/libs`のimportをひとグループにしてinternalの前にする
+          {
+            "pattern": "{@/app/**,@/features/**,@/libs/**}",
+            "group": "internal",
+            "position": "before"
+          },
+          // `@/components`, `@/pages`のimportをグルーピング
+          {
+            "pattern": "{@/components/**,@/pages/**}",
+            "group": "internal",
+            "position": "before"
+          },
+          // CSS moduleを一番最後に
+          {
+            "pattern": "./**.module.css",
+            "group": "index",
+            "position": "after"
+          }
+        ]
+      }
+    ]
+  }
 }

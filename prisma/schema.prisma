@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String     @id @default(auto()) @map("_id") @db.ObjectId // オブジェクトID
+  name           String     // 名前
+  image          String?    // 画像
+  email          String?    @unique // メールアドレス(重複なし)
+  emailVerified  DateTime?  // メールアドレス認証確認(ユーザーが確認した日時を保存)
+  hashedPassword String?    // ハッシュ化されたパスワード
+  CreatedAt      DateTime   @default(now()) // ユーザー作成日時(作成された瞬間の日時)
+  updatedAt      DateTime   @updatedAt // ユーザー情報更新日時(更新されるたびに日時更新)
+  favoriteIds    String[]   @db.ObjectId // お気に入り登録した映画のIDの配列(ObjectIdで保存)
+  sessions       Session[]  // Sessionモデルの配列
+  accounts       Account[]  // Accountモデルの配列
+}
+
+model Account {
+  id                String     @id @default(auto()) @map("_id") @db.ObjectId // オブジェクトID
+  userId            String     @db.ObjectId // ユーザーID(ObjectIdで保存)
+  type              String     // アカウントの種類(GoogleアカウントやFacebookアカウントなど)
+  provider          String     // アカウントの提供元
+  providerAccountId String     // アカウントの提供元のID
+  refresh_token     String?    @db.String // アクセストークンを更新するためのリフレッシュトークン
+  access_token      String?    @db.String // アクセストークン
+  expires_at        Int?       // アクセストークンの有効期限
+  token_type        String?    // アクセストークンの種類
+  scope             String?    // アクセストークンのスコープ
+  id_token          String?    @db.String // IDトークン
+  session_state     String?    // セッションの状態
+
+  // ユーザー情報(Userモデルに関連し、親が削除されたときに子も削除)
+  user              User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // providerとproviderAccountIdの組み合わせの重複なし
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId // オブジェクトID
+  sessionToken String     @unique // セッションのトークン(重複なし)
+  userId       String     @db.ObjectId // セッションに紐づくユーザーID(ObjectIdで保存)
+  expires      DateTime   // セッションの有効期限
+
+  // ユーザー情報(Userモデルに関連し、親が削除されたときに子も削除)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId // オブジェクトID
+  identifier  String     // 認証トークンの識別子
+  token       String     @unique // 認証トークン(重複なし)
+  expires     DateTime   // 認証トークンの有効期限
+
+  // identifierとtokenの組み合わせの重複なし
+  @@unique([identifier, token])
+}
+
+model Movie {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId // オブジェクトID
+  title        String     // 映画のタイトル
+  description  String     // 映画の説明
+  videoUrl     String     // 映画のビデオURL
+  thumbnailUrl String     // 映画のサムネイルURL
+  genre        String     // 映画のジャンル
+  duration     String     // 映画の再生時間
+}
